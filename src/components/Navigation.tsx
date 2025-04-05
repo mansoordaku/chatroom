@@ -10,6 +10,8 @@ export default function Navigation() {
     { href: '/', label: 'Home' },
     { href: '/quadratic', label: 'Quadratic Graph' },
     { href: '/noise-reduction', label: 'Noise Reduction' },
+    { href: '/3d', label: '3D Demo' },
+    { href: '/tennis-ball', label: 'Tennis Ball' },
   ];
 
   return (
