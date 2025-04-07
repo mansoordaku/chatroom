@@ -12,6 +12,7 @@ export default function Navigation() {
     { href: '/noise-reduction', label: 'Noise Reduction' },
     { href: '/3d', label: '3D Demo' },
     { href: '/tennis-ball', label: 'Tennis Ball' },
+    { href: '/spiral', label: 'Spiral Motion' },
   ];
 
   return (
