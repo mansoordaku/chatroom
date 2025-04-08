@@ -19,6 +19,7 @@ interface SpiralProps {
   glowIntensity: number;
   particleSize: number;
   noiseAmount: number;
+  maxHeight: number;
 }
 
 function EnergySpiralEffect({
@@ -30,7 +31,8 @@ function EnergySpiralEffect({
   color,
   glowIntensity,
   particleSize,
-  noiseAmount
+  noiseAmount,
+  maxHeight
 }: SpiralProps) {
   const points = useRef<THREE.Points>(null);
   const timeRef = useRef(0);
@@ -41,27 +43,36 @@ function EnergySpiralEffect({
   const geometry = useMemo(() => {
     const positions = new Float32Array(particleCount * 3);
     const sizes = new Float32Array(particleCount);
+    const colors = new Float32Array(particleCount * 3);
+    
+    const threeColor = new THREE.Color(color);
     
     // Create initial spiral shape
     for (let i = 0; i < particleCount; i++) {
       const t = i / particleCount;
-      const angle = t * Math.PI * 4; // 2 complete rotations
+      const angle = t * Math.PI * 8; // 4 complete rotations
       const radius = spiralRadius * (1 + Math.sin(t * Math.PI * 2) * 0.2);
-      const height = t * 2; // Height from 0 to 2
+      const height = t * maxHeight; // Use maxHeight parameter
       
       positions[i * 3] = Math.cos(angle) * radius;
       positions[i * 3 + 1] = height;
       positions[i * 3 + 2] = Math.sin(angle) * radius;
       
       // Larger particles at the front of the spiral
-      sizes[i] = particleSize * (1 + t);
+      sizes[i] = particleSize;
+      
+      // Add color variation
+      colors[i * 3] = threeColor.r;
+      colors[i * 3 + 1] = threeColor.g;
+      colors[i * 3 + 2] = threeColor.b;
     }
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     return geometry;
-  }, [particleCount, spiralRadius, particleSize]);
+  }, [particleCount, spiralRadius, particleSize, color, maxHeight]);
 
   useFrame((state, delta) => {
     if (!isRunning || !points.current) return;
@@ -71,7 +82,7 @@ function EnergySpiralEffect({
     // Update vertical position with rise and fall
     if (directionRef.current > 0) {
       heightRef.current += delta * verticalSpeed;
-      if (heightRef.current >= 3) {
+      if (heightRef.current >= maxHeight) {
         directionRef.current = -1;
       }
     } else {
@@ -85,7 +96,7 @@ function EnergySpiralEffect({
     
     for (let i = 0; i < particleCount; i++) {
       const t = i / particleCount;
-      const baseAngle = t * Math.PI * 4 + timeRef.current;
+      const baseAngle = t * Math.PI * 8 + timeRef.current;
       const radius = spiralRadius * (1 + Math.sin(timeRef.current + t * Math.PI * 2) * 0.2);
       const verticalOffset = heightRef.current;
       
@@ -97,7 +108,7 @@ function EnergySpiralEffect({
       };
 
       positions[i * 3] = Math.cos(baseAngle) * radius + noise.x;
-      positions[i * 3 + 1] = (t * 2 + verticalOffset) % 3 + noise.y;
+      positions[i * 3 + 1] = (t * maxHeight + verticalOffset) % maxHeight + noise.y;
       positions[i * 3 + 2] = Math.sin(baseAngle) * radius + noise.z;
     }
 
@@ -107,13 +118,13 @@ function EnergySpiralEffect({
   return (
     <Points ref={points} geometry={geometry}>
       <pointsMaterial
-        size={particleSize * 2} // Double the base size
-        color={color}
+        size={particleSize * 3}
+        vertexColors
         transparent
-        opacity={1} // Full opacity
+        opacity={1}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
-        sizeAttenuation
+        sizeAttenuation={true}
       />
     </Points>
   );
@@ -140,14 +151,15 @@ function DebugObjects() {
 export default function SpiralMotion() {
   const [isRunning, setIsRunning] = useState(false);
   const [settings, setSettings] = useState({
-    particleCount: 2000,    // More particles
-    spiralRadius: 2,        // Larger radius
-    verticalSpeed: 0.3,
+    particleCount: 2000,
+    spiralRadius: 3,
+    verticalSpeed: 0.5,
     rotationSpeed: 1,
     color: '#ff6600',
-    glowIntensity: 3,       // More glow
-    particleSize: 0.15,     // Larger particles
-    noiseAmount: 0.05
+    glowIntensity: 2,
+    particleSize: 0.3,
+    noiseAmount: 0.05,
+    maxHeight: 5
   });
 
   // Stop animation when changing particle count
@@ -187,13 +199,14 @@ export default function SpiralMotion() {
       <div className="w-full h-[600px] bg-black rounded-lg overflow-hidden">
         <Canvas 
           camera={{ 
-            position: [5, 5, 5], // Changed camera position
+            position: [10, 5, 10],
             fov: 60,
             near: 0.1,
             far: 1000
           }}
           dpr={[1, 2]}
         >
+          <color attach="background" args={['#000000']} />
           <EnergySpiralEffect
             isRunning={isRunning}
             {...settings}
@@ -211,8 +224,8 @@ export default function SpiralMotion() {
           </Effects>
           
           {/* Basic lighting */}
-          <ambientLight intensity={0.2} />
-          <directionalLight position={[10, 10, 5]} intensity={0.5} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1} />
         </Canvas>
       </div>
       
@@ -289,6 +302,14 @@ export default function SpiralMotion() {
               label="Chaos Amount"
               min={0}
               max={0.1}
+            />
+            <SliderControl
+              value={settings.maxHeight}
+              onChange={(value) => setSettings(s => ({ ...s, maxHeight: value }))}
+              label="Maximum Height"
+              min={2}
+              max={10}
+              step={0.5}
             />
             <div className="flex flex-col gap-1">
               <label className="text-sm text-gray-300">Color</label>
