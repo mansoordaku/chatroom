@@ -11,13 +11,16 @@
   "dependencies": {
     "@react-three/drei": "^10.0.5",
     "@react-three/fiber": "^9.1.1",
+    "@types/uuid": "^10.0.0",
     "cannon-es": "^0.20.0",
     "maath": "^0.10.8",
     "next": "15.2.4",
+    "openai": "^4.94.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rnnoise-wasm": "^0.0.1-security",
     "three": "^0.175.0",
+    "uuid": "^11.1.0",
     "wavesurfer.js": "^7.9.4"
   },
   "devDependencies": {
